@@ -1,0 +1,25 @@
+# Запасной способ пересобрать .xcodeproj: `xcodegen generate` в этой папке.
+# Основной проект (BizMath.xcodeproj) уже лежит рядом и открывается без XcodeGen.
+name: BizMath
+options:
+  bundleIdPrefix: com.bushrut
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: ru
+targets:
+  BizMath:
+    type: application
+    platform: iOS
+    sources:
+      - path: BizMath
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bushrut.bizmath
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
