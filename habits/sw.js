@@ -1,5 +1,7 @@
-/* Простой service worker: кэширует приложение для офлайн-работы. */
-const CACHE = "atomic-habits-v1";
+/* Service worker: держит приложение доступным офлайн, но всегда
+   предпочитает свежую версию из сети, если она доступна (network-first).
+   Кэш — только подстраховка на случай отсутствия связи. */
+const CACHE = "atomic-habits-v2";
 const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -17,14 +19,11 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((res) => {
-          if (res && res.ok) caches.open(CACHE).then((c) => c.put(event.request, res.clone()));
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(event.request)
+      .then((res) => {
+        if (res && res.ok) caches.open(CACHE).then((c) => c.put(event.request, res.clone()));
+        return res;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
