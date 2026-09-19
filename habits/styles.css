@@ -334,10 +334,11 @@ input, textarea, select {
 textarea { min-height: 62px; resize: vertical; }
 input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.sub { display: block; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.sub { display: block; min-width: 0; }
 .sub + .sub, .grid2 + .sub { margin-top: 10px; }
 .sub > span { display: block; margin-bottom: 4px; font-size: 12px; color: var(--muted); }
+.sub > input { min-width: 0; }
 
 .seg { display: flex; padding: 3px; background: var(--surface-2); border-radius: 12px; }
 .seg__btn { flex: 1; min-height: 38px; font: inherit; color: var(--muted); background: none; border: 0; border-radius: 9px; cursor: pointer; }
