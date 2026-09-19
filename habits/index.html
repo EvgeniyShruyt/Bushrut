@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="auto">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Атомные привычки</title>
+  <meta name="description" content="Личный трекер полезных и вредных привычек по принципам книги «Atomic Habits»">
+  <meta name="theme-color" content="#111418">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Привычки">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <h1 class="topbar__title">Атомные привычки</h1>
+    <button class="icon-btn" id="theme-btn" type="button" aria-label="Сменить тему">◐</button>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ====================== СЕГОДНЯ ====================== -->
+  <section class="view" id="view-today">
+    <div class="datebar">
+      <button class="icon-btn" id="day-prev" type="button" aria-label="Предыдущий день">‹</button>
+      <div class="datebar__center">
+        <div class="datebar__date" id="day-label">Сегодня</div>
+        <button class="linkbtn" id="day-today" type="button" hidden>Вернуться к сегодня</button>
+      </div>
+      <button class="icon-btn" id="day-next" type="button" aria-label="Следующий день">›</button>
+    </div>
+
+    <div class="progress card">
+      <svg class="ring" viewBox="0 0 80 80" aria-hidden="true">
+        <circle class="ring__bg" cx="40" cy="40" r="34"></circle>
+        <circle class="ring__fg" cx="40" cy="40" r="34" id="ring-fg"></circle>
+      </svg>
+      <div class="progress__text">
+        <div class="progress__num" id="progress-num">0%</div>
+        <div class="progress__sub" id="progress-sub">нет привычек на этот день</div>
+      </div>
+    </div>
+
+    <div id="today-warnings"></div>
+
+    <h2 class="section-title">Полезные привычки</h2>
+    <div id="today-good" class="list"></div>
+
+    <h2 class="section-title">Вредные привычки</h2>
+    <div id="today-bad" class="list"></div>
+  </section>
+
+  <!-- ====================== ПРИВЫЧКИ ====================== -->
+  <section class="view" id="view-habits" hidden>
+    <div class="row-between">
+      <h2 class="section-title section-title--flush">Мои привычки</h2>
+      <button class="btn btn--primary" id="add-habit" type="button">+ Добавить</button>
+    </div>
+    <div id="habits-list" class="list"></div>
+
+    <h2 class="section-title">Архив</h2>
+    <div id="archive-list" class="list"></div>
+  </section>
+
+  <!-- ====================== СТАТИСТИКА ====================== -->
+  <section class="view" id="view-stats" hidden>
+    <h2 class="section-title section-title--flush">Статистика</h2>
+    <div id="stats-list" class="list"></div>
+  </section>
+
+  <!-- ====================== НАСТРОЙКИ ====================== -->
+  <section class="view" id="view-settings" hidden>
+    <h2 class="section-title section-title--flush">Данные</h2>
+    <div class="card stack">
+      <p class="muted">
+        Все данные хранятся только в этом браузере. Чтобы перенести их на другое
+        устройство — выгрузите файл и загрузите его там.
+      </p>
+      <div class="btn-row">
+        <button class="btn" id="export-btn" type="button">Выгрузить файл</button>
+        <button class="btn" id="import-btn" type="button">Загрузить файл</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="demo-btn" type="button">Добавить примеры</button>
+        <button class="btn btn--danger" id="reset-btn" type="button">Удалить всё</button>
+      </div>
+    </div>
+
+    <h2 class="section-title">Четыре закона поведения</h2>
+    <div class="card stack laws">
+      <p><b>Чтобы создать полезную привычку:</b></p>
+      <ol>
+        <li><b>Сделайте её очевидной.</b> Точное намерение: «Я буду [привычка] в [время] в [место]» или связка с уже существующей привычкой.</li>
+        <li><b>Сделайте её привлекательной.</b> Свяжите с тем, что нравится, и помните, кем вы становитесь.</li>
+        <li><b>Сделайте её лёгкой.</b> Правило двух минут: версия привычки, которая занимает не больше двух минут.</li>
+        <li><b>Сделайте её приятной.</b> Отмечайте выполнение и не разрывайте цепочку.</li>
+      </ol>
+      <p><b>Чтобы избавиться от вредной привычки — переверните законы:</b></p>
+      <ol>
+        <li>Сделайте её незаметной — уберите триггер из окружения.</li>
+        <li>Сделайте её непривлекательной — назовите настоящую цену.</li>
+        <li>Сделайте её сложной — добавьте препятствий между собой и действием.</li>
+        <li>Сделайте её неприятной — сделайте цену срыва видимой.</li>
+      </ol>
+      <p class="muted">
+        Главное правило трекера: <b>никогда не пропускай дважды</b>. Один пропуск —
+        случайность, два подряд — начало новой привычки.
+      </p>
+    </div>
+
+    <p class="muted center small">Версия данных: <span id="ver"></span></p>
+  </section>
+
+</main>
+
+<nav class="tabbar" id="tabbar">
+  <button class="tab is-active" data-view="today" type="button"><span class="tab__ico">✓</span>Сегодня</button>
+  <button class="tab" data-view="habits" type="button"><span class="tab__ico">☰</span>Привычки</button>
+  <button class="tab" data-view="stats" type="button"><span class="tab__ico">▦</span>Статистика</button>
+  <button class="tab" data-view="settings" type="button"><span class="tab__ico">⚙</span>Ещё</button>
+</nav>
+
+<!-- ====================== ФОРМА ПРИВЫЧКИ ====================== -->
+<dialog class="sheet" id="habit-dialog">
+  <form method="dialog" id="habit-form" class="sheet__form">
+    <div class="sheet__head">
+      <button class="linkbtn" value="cancel" type="submit">Отмена</button>
+      <b id="dialog-title">Новая привычка</b>
+      <button class="linkbtn linkbtn--strong" id="save-btn" type="submit" value="save">Сохранить</button>
+    </div>
+
+    <div class="sheet__body">
+      <div class="seg" id="kind-seg" role="group" aria-label="Тип привычки">
+        <button type="button" class="seg__btn is-active" data-kind="good">Осваиваю</button>
+        <button type="button" class="seg__btn" data-kind="bad">Бросаю</button>
+      </div>
+
+      <label class="field">
+        <span class="field__label">Привычка</span>
+        <input id="f-title" required maxlength="80" placeholder="Например: зарядка 10 минут">
+      </label>
+
+      <label class="field">
+        <span class="field__label">Идентичность</span>
+        <input id="f-identity" maxlength="80" placeholder="Я человек, который заботится о теле">
+        <span class="field__hint">Кем вы становитесь благодаря этой привычке. Цель — не результат, а личность.</span>
+      </label>
+
+      <fieldset class="field field--group" data-for="good">
+        <legend class="field__label">1. Очевидная</legend>
+        <div class="grid2">
+          <label class="sub"><span>Время</span><input id="f-time" type="time"></label>
+          <label class="sub"><span>Место</span><input id="f-place" maxlength="40" placeholder="кухня"></label>
+        </div>
+        <label class="sub"><span>Сразу после привычки</span>
+          <input id="f-stack" maxlength="60" placeholder="после утреннего кофе">
+        </label>
+        <span class="field__hint">Связка привычек: «После [текущая привычка] я буду [новая привычка]».</span>
+      </fieldset>
+
+      <label class="field" data-for="good">
+        <span class="field__label">2. Привлекательная — награда</span>
+        <input id="f-reward" maxlength="80" placeholder="После — любимый подкаст">
+      </label>
+
+      <label class="field" data-for="good">
+        <span class="field__label">3. Лёгкая — версия на 2 минуты</span>
+        <input id="f-tiny" maxlength="80" placeholder="Надеть кроссовки и выйти за дверь">
+        <span class="field__hint">Минимум, который считается выполнением в плохой день.</span>
+      </label>
+
+      <label class="field" data-for="bad">
+        <span class="field__label">Триггер, который надо убрать</span>
+        <input id="f-cue-bad" maxlength="80" placeholder="Телефон рядом с кроватью">
+        <span class="field__hint">Сделайте привычку незаметной: уберите подсказку из окружения.</span>
+      </label>
+
+      <label class="field" data-for="bad">
+        <span class="field__label">Настоящая цена</span>
+        <input id="f-cost" maxlength="80" placeholder="Теряю час сна и весь следующий день">
+        <span class="field__hint">Сделайте привычку непривлекательной: назовите, чего она стоит.</span>
+      </label>
+
+      <label class="field" data-for="bad">
+        <span class="field__label">Препятствие</span>
+        <input id="f-friction" maxlength="80" placeholder="Заряжать телефон в другой комнате">
+        <span class="field__hint">Сделайте привычку сложной: добавьте шагов между собой и действием.</span>
+      </label>
+
+      <label class="field">
+        <span class="field__label">Зачем мне это</span>
+        <textarea id="f-why" rows="2" maxlength="200" placeholder="Чтобы просыпаться с ясной головой"></textarea>
+      </label>
+
+      <fieldset class="field field--group" data-for="good">
+        <legend class="field__label">Дни недели</legend>
+        <div class="days" id="f-days"></div>
+      </fieldset>
+
+      <div class="sheet__delete">
+        <button class="btn btn--danger" id="delete-btn" type="button" hidden>Удалить привычку</button>
+        <button class="btn" id="archive-btn" type="button" hidden>В архив</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
