@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    /* Приложение открывается как PWA на телефоне — растягивание страницы мешает. */
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    @apply bg-ink text-white antialiased;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Числовая телеметрия: XP, стрики, статы. */
+  .tabular {
+    @apply font-mono tabular-nums;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-ink-line bg-ink-soft shadow-card;
+  }
+
+  .chip {
+    @apply rounded-full px-3 py-1.5 text-sm font-medium transition-colors;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+      transition-colors disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .btn-primary {
+    @apply btn bg-racing text-white hover:bg-racing/90;
+  }
+
+  .btn-ghost {
+    @apply btn border border-ink-line bg-ink-soft text-white hover:border-electric/50;
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-ink-line bg-ink px-3 py-2.5 text-sm text-white
+      outline-none placeholder:text-ink-muted focus:border-electric/60;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-muted;
+  }
+}

@@ -1,0 +1,202 @@
+// Личный трекер привычек — схема данных.
+// Отличия от черновика ТЗ (раздел 3) описаны в README, раздел «Отступления от ТЗ».
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Привычка. type = POSITIVE (делаем) либо BUDGET (антипривычка с недельным лимитом).
+model Habit {
+  id            String  @id @default(cuid())
+  name          String
+  /// "body" | "productivity" | "family" | "antihabit"
+  category      String
+  /// "health" | "discipline" | "mind" | "family" | "finance"
+  statTarget    String
+  /// "POSITIVE" | "BUDGET"
+  type          String
+  /// "MORNING" | "AFTERNOON" | "EVENING"
+  timeOfDay     String
+  /// "ALL" либо перечисление через запятую: "MON,WED,FRI"
+  daysOfWeek    String  @default("ALL")
+  /// "ANY" | "HOME_OR_OTHER" | "OFFICE"
+  visibleWhen   String  @default("ANY")
+  /// Только для BUDGET: сколько единиц допустимо за неделю (0 = полный отказ).
+  weeklyBudget  Int?
+  /// Подпись единицы бюджета: "порция", "раз", "день".
+  unitLabel     String  @default("раз")
+  /// Только для BUDGET: день отмечается как да/нет («уложился / превысил»),
+  /// а не счётчиком. Использовано в этот день = 1.
+  dailyBinary   Boolean @default(false)
+  xpValue       Int     @default(10)
+  currencyValue Int     @default(10)
+  sortOrder     Int     @default(0)
+  active        Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  logs   DailyLog[]
+  streak Streak?
+
+  @@index([active, timeOfDay, sortOrder])
+}
+
+/// Отметка привычки за конкретный день. date — локальная дата "YYYY-MM-DD".
+model DailyLog {
+  id      String @id @default(cuid())
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  /// Локальная дата в APP_TIMEZONE, формат "YYYY-MM-DD".
+  date    String
+
+  /// POSITIVE: выполнено ли.
+  completed   Boolean @default(false)
+  /// BUDGET: сколько единиц употреблено в этот день.
+  budgetUsed  Int     @default(0)
+  /// День закрыт пит-стопом: пропуск, но стрик сохранён.
+  pitStopUsed Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([habitId, date])
+  @@index([date])
+}
+
+/// Тип дня — свойство дня, а не отдельной привычки (в ТЗ dayType лежал в DailyLog).
+model DayEntry {
+  /// Локальная дата "YYYY-MM-DD".
+  date    String @id
+  /// "OFFICE" | "HOME" | "OTHER"
+  dayType String @default("HOME")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Streak {
+  id                  String    @id @default(cuid())
+  habitId             String    @unique
+  habit               Habit     @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  currentStreak       Int       @default(0)
+  longestStreak       Int       @default(0)
+  pitStopsAvailable   Int       @default(0)
+  /// Сколько дней подряд накоплено в сторону следующего пит-стопа.
+  daysTowardsPitStop  Int       @default(0)
+  lastPitStopEarnedAt DateTime?
+}
+
+/// Материализованный кэш итогов. Источник правды — LedgerEntry, пересчитывается
+/// в той же транзакции, что и запись в леджер.
+model UserStats {
+  id              String @id @default("singleton")
+  health          Int    @default(0)
+  discipline      Int    @default(0)
+  mind            Int    @default(0)
+  family          Int    @default(0)
+  finance         Int    @default(0)
+  xpTotal         Int    @default(0)
+  currencyBalance Int    @default(0)
+}
+
+/// Журнал начислений/списаний. Идемпотентен по key: пересчёт дня переписывает
+/// одну запись, поэтому снятие галочки точно откатывает то, что начислило.
+model LedgerEntry {
+  id   String @id @default(cuid())
+  /// "day:2026-09-13" | "week:2026-W37:<habitId>" | "purchase:<purchaseId>"
+  key  String @unique
+  /// Локальная дата, к которой относится начисление.
+  date String
+  /// "DAY" | "WEEK_BONUS" | "PURCHASE"
+  kind String
+
+  xp         Int @default(0)
+  currency   Int @default(0)
+  health     Int @default(0)
+  discipline Int @default(0)
+  mind       Int @default(0)
+  family     Int @default(0)
+  finance    Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([date])
+  @@index([kind])
+}
+
+model RewardItem {
+  id     String  @id @default(cuid())
+  name   String
+  cost   Int
+  emoji  String  @default("🏁")
+  active Boolean @default(true)
+
+  createdAt DateTime   @default(now())
+  purchases Purchase[]
+}
+
+model Purchase {
+  id             String     @id @default(cuid())
+  rewardItemId   String
+  rewardItem     RewardItem @relation(fields: [rewardItemId], references: [id], onDelete: Cascade)
+  purchasedAt    DateTime   @default(now())
+  costPaid       Int
+  /// Название на момент покупки — история не должна ломаться при переименовании.
+  nameAtPurchase String     @default("")
+}
+
+/// Информационный блок в ленте дня. Не чекается.
+model ScheduleBlock {
+  id        String  @id @default(cuid())
+  name      String
+  /// "MON" ... "SUN"
+  dayOfWeek String
+  /// "08:15"
+  startTime String
+  endTime   String
+  fixed     Boolean @default(true)
+
+  @@index([dayOfWeek, startTime])
+}
+
+/// Закрытая неделя по BUDGET-привычке: удерживает результат и факт выплаты бонуса.
+model BudgetWeek {
+  id           String  @id @default(cuid())
+  habitId      String
+  /// ISO-неделя, "2026-W37".
+  week         String
+  used         Int     @default(0)
+  limit        Int     @default(0)
+  withinBudget Boolean @default(false)
+  bonusPaid    Int     @default(0)
+
+  closedAt DateTime @default(now())
+
+  @@unique([habitId, week])
+}
+
+model Achievement {
+  /// Код из каталога в src/lib/domain/achievements.ts
+  code       String   @id
+  unlockedAt DateTime @default(now())
+}
+
+/// Служебное состояние для ленивых пересчётов (без cron и фоновых воркеров).
+model AppState {
+  id                String  @id @default("singleton")
+  /// Последняя локальная дата, за которую уже посчитаны пропуски/стрики.
+  lastProcessedDate String?
+  /// Последняя ISO-неделя, по которой закрыты бюджеты.
+  lastClosedWeek    String?
+}
+
+model PushSubscription {
+  endpoint  String   @id
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}
