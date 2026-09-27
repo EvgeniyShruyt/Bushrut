@@ -12,12 +12,29 @@ from typing import Any
 
 import httpx
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 BASE_URL = os.environ.get("COINKEEPER_BASE_URL", "https://coinkeeper.me").rstrip("/")
 COOKIE = os.environ.get("COINKEEPER_COOKIE", "")
 BUDGET_ID = os.environ.get("COINKEEPER_BUDGET_ID", "")
 
-mcp = FastMCP("coinkeeper")
+ACCESS_TOKEN = os.environ.get("MCP_ACCESS_TOKEN", "")
+# Разрешённые Host-заголовки: localhost + домен хостинга (Render задаёт его сам)
+# + список из MCP_ALLOWED_HOSTS через запятую.
+ALLOWED_HOSTS = ["localhost", "localhost:*", "127.0.0.1", "127.0.0.1:*"] + [
+    h.strip()
+    for h in [os.environ.get("RENDER_EXTERNAL_HOSTNAME", ""),
+              *os.environ.get("MCP_ALLOWED_HOSTS", "").split(",")]
+    if h.strip()
+]
+
+# stateless_http: каждый запрос независим — подходит для бесплатных хостингов,
+# где инстанс может перезапускаться.
+mcp = FastMCP("coinkeeper", stateless_http=True, streamable_http_path="/mcp",
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=True, allowed_hosts=ALLOWED_HOSTS
+    ),
+)
 
 _client: httpx.AsyncClient | None = None
 _budget_id: str | None = BUDGET_ID or None
@@ -206,8 +223,42 @@ async def spending_summary(date_from: str, date_to: str) -> dict:
     }
 
 
+def http_app():
+    """ASGI-приложение для удалённого подключения (приложение Claude на телефоне).
+
+    Адрес коннектора: https://<хост>/<MCP_ACCESS_TOKEN>/mcp — секретный токен в
+    пути не даёт посторонним читать ваши финансы.
+    """
+    if len(ACCESS_TOKEN) < 16:
+        raise RuntimeError("Задайте MCP_ACCESS_TOKEN длиной не менее 16 символов.")
+    inner = mcp.streamable_http_app()
+    prefix = f"/{ACCESS_TOKEN}"
+
+    async def app(scope, receive, send):
+        if scope["type"] == "lifespan":
+            return await inner(scope, receive, send)
+        path = scope.get("path", "")
+        if scope["type"] == "http" and path in ("/", "/health"):
+            await send({"type": "http.response.start", "status": 200,
+                        "headers": [(b"content-type", b"text/plain")]})
+            return await send({"type": "http.response.body", "body": b"ok"})
+        if not path.startswith(prefix + "/"):
+            await send({"type": "http.response.start", "status": 404, "headers": []})
+            return await send({"type": "http.response.body", "body": b""})
+        scope = dict(scope, path=path[len(prefix):])
+        return await inner(scope, receive, send)
+
+    return app
+
+
 def main() -> None:
-    mcp.run()
+    if os.environ.get("MCP_TRANSPORT") == "http" or os.environ.get("PORT"):
+        import uvicorn
+
+        uvicorn.run(http_app(), host="0.0.0.0", port=int(os.environ.get("PORT", "8000")),
+                    proxy_headers=True, forwarded_allow_ips="*")
+    else:
+        mcp.run()
 
 
 if __name__ == "__main__":

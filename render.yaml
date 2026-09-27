@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: coinkeeper-mcp
+    runtime: docker
+    rootDir: coinkeeper-mcp
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: COINKEEPER_COOKIE
+        sync: false
+      - key: MCP_ACCESS_TOKEN
+        generateValue: true

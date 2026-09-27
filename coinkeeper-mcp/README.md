@@ -13,7 +13,21 @@ MCP-коннектор для [Coin Keeper](https://coinkeeper.me): позвол
 | `list_transactions` | Операции с фильтрами по датам, категории и тексту |
 | `spending_summary` | Итоги доходов/расходов по категориям за период |
 
-## Установка
+## Подключение к Claude на телефоне
+
+Коннектор разворачивается как веб-сервер на бесплатном хостинге Render, а в Claude добавляется по ссылке.
+
+1. **Cookie.** На компьютере войдите на https://coinkeeper.me и скопируйте заголовок `Cookie` (см. «Получение cookie» ниже).
+2. **Хостинг.** Зарегистрируйтесь на https://render.com (можно через GitHub) → **New → Blueprint** → выберите этот репозиторий. Render прочитает `render.yaml` из корня репозитория.
+3. Когда Render попросит `COINKEEPER_COOKIE`, вставьте скопированный cookie. `MCP_ACCESS_TOKEN` сгенерируется автоматически.
+4. После деплоя откройте сервис → **Environment**, скопируйте значение `MCP_ACCESS_TOKEN`. Адрес коннектора:
+   `https://<имя-сервиса>.onrender.com/<MCP_ACCESS_TOKEN>/mcp`
+5. **Claude.** На claude.ai (с компьютера или телефона): **Settings → Connectors → Add custom connector**, вставьте адрес. Коннектор появится и в приложении Claude на телефоне.
+
+Адрес с токеном — это ключ к вашим финансам: никому его не пересылайте. Если cookie истечёт, обновите `COINKEEPER_COOKIE` в Render → Environment.
+На бесплатном тарифе Render сервер засыпает без запросов, поэтому первый запрос после паузы может идти ~30–60 секунд.
+
+## Локальная установка (Claude Code / Claude Desktop)
 
 ```bash
 cd coinkeeper-mcp
@@ -54,3 +68,6 @@ claude mcp add coinkeeper -e COINKEEPER_COOKIE='...' -- coinkeeper-mcp
 | `COINKEEPER_COOKIE` | да | Cookie сессии coinkeeper.me |
 | `COINKEEPER_BUDGET_ID` | нет | ID бюджета (иначе берётся из `/api/user/info`) |
 | `COINKEEPER_BASE_URL` | нет | По умолчанию `https://coinkeeper.me` |
+| `MCP_ACCESS_TOKEN` | для веб-режима | Секрет в адресе коннектора, не короче 16 символов |
+| `MCP_ALLOWED_HOSTS` | нет | Домены сервера через запятую (на Render определяется сам) |
+| `PORT` / `MCP_TRANSPORT=http` | нет | Включают веб-режим (Streamable HTTP) |

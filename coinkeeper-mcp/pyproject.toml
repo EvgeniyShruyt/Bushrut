@@ -3,7 +3,7 @@ name = "coinkeeper-mcp"
 version = "0.1.0"
 description = "MCP-коннектор для Coin Keeper (неофициальный веб-API coinkeeper.me)"
 requires-python = ">=3.10"
-dependencies = ["mcp>=1.2,<2", "httpx>=0.27"]
+dependencies = ["mcp>=1.2,<2", "httpx>=0.27", "uvicorn>=0.30"]
 
 [project.scripts]
 coinkeeper-mcp = "coinkeeper_mcp:main"
